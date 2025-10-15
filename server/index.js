@@ -1,28 +1,31 @@
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./config/database');
-const User = require('./models/User');
+
+// Import all models and their associations
+require('./models');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ▼▼▼ ADICIONE ESTAS LINHAS AQUI ▼▼▼
-// Definindo as rotas da API
+// API Routes
 app.use('/api/auth', require('./routes/authRoutes'));
-// ▲▲▲ FIM DAS NOVAS LINHAS ▲▲▲
+app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/tasks', require('./routes/taskRoutes')); // <-- Add the new task routes
 
 app.get('/', (req, res) => {
-  res.json({ message: 'Bem-vindo à API de Gestão de Projetos!' });
+  res.json({ message: 'Welcome to the TaskFlow API!' });
 });
 
 const PORT = process.env.PORT || 5000;
 
-sequelize.sync()
+// Sync all defined models to the DB and then start the server
+sequelize.sync() 
   .then(() => {
-    console.log('Tabelas sincronizadas com o banco de dados.');
+    console.log('Database & tables synchronized.');
     app.listen(PORT, () => {
-      console.log(`Servidor rodando na porta ${PORT}`);
+      console.log(`Server is running on port ${PORT}`);
     });
   })
-  .catch(err => console.error('Não foi possível sincronizar as tabelas:', err));
+  .catch(err => console.error('Failed to sync database:', err));
