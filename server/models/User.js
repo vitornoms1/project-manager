@@ -2,9 +2,9 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
 
-// Definimos o modelo 'User' que representa a tabela 'users' no banco de dados
+
 const User = sequelize.define('User', {
-  // Definimos as colunas da tabela
+  
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
@@ -18,9 +18,9 @@ const User = sequelize.define('User', {
   email: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true, // Garante que não haverá dois usuários com o mesmo email
+    unique: true, 
     validate: {
-      isEmail: true // Validação para garantir que o formato é de um email
+      isEmail: true 
     }
   },
   password: {

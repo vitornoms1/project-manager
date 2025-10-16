@@ -1,26 +1,54 @@
-npm-debug.log
+# =========================================
+# Logs
+# =========================================
+npm-debug.log*
 yarn-error.log
 pnpm-debug.log
+*.log
 
-.cache/
-
+# =========================================
+# Editor & IDE configs
+# =========================================
 .vscode/
 .idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
+# =========================================
+# OS generated files
+# =========================================
+.DS_Store
+Thumbs.db
+
+# =========================================
+# Dependency directories
+# =========================================
 server/node_modules/
-
-server/.env
-
 client/node_modules/
 
+# =========================================
+# Build & Cache output
+# =========================================
+server/dist/
+server/build/
 client/dist/
-
 client/.vite/
+.cache/
 
+# =========================================
+# Environment variables
+# =========================================
+server/.env
+client/.env
 client/.env.local
 client/.env.*.local
+.env
 
-
-.DS_Store
-
-Thumbs.db
+# =========================================
+# Test & Coverage reports
+# =========================================
+coverage/
+.nyc_output/

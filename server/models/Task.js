@@ -30,7 +30,7 @@ const Task = sequelize.define('Task', {
     type: DataTypes.DATE,
     allowNull: true,
   },
-  // Foreign Key for the Project this task belongs to
+  
   projectId: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -39,10 +39,10 @@ const Task = sequelize.define('Task', {
       key: 'id',
     }
   },
-  // Foreign Key for the User this task is assigned to
+  
   assignedToId: {
     type: DataTypes.INTEGER,
-    allowNull: true, // A task might be unassigned initially
+    allowNull: true, 
     references: {
       model: 'Users',
       key: 'id',

@@ -1,100 +1,111 @@
-import React, { createContext, useState, useContext } from 'react';
-import axios from 'axios';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import api from '../api/axios';
 
-// 1. Cria o Contexto
 const AuthContext = createContext();
 
-// 2. Cria um Hook customizado para facilitar o uso do contexto
 export function useAuth() {
   return useContext(AuthContext);
 }
 
-// 3. Cria o Provedor (Provider) do Contexto
-// Este componente vai "envolver" nossa aplicação e fornecer o estado de autenticação
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(localStorage.getItem('token')); // Pega o token do localStorage se existir
-  const [user, setUser] = useState(null); // (Opcional) Poderíamos guardar os dados do usuário aqui
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Configura uma instância do axios para já incluir o token nos headers
-  const api = axios.create({
-    baseURL: '/api' // Apenas o caminho relativo para o proxy
-  });
-
-  // Função de Registro
-  const register = async (name, email, password) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.post('/auth/register', { name, email, password });
-      const newToken = response.data.token;
-      setToken(newToken);
-      localStorage.setItem('token', newToken); // Salva o token no navegador
-    } catch (err) {
-      // ▼▼▼ TRATAMENTO DE ERRO MELHORADO ▼▼▼
-      if (err.response) {
-        // O servidor respondeu com um erro (ex: email já existe)
-        setError(err.response.data.msg || 'Erro ao registrar.');
-      } else if (err.request) {
-        // A requisição foi feita, mas não houve resposta (servidor offline)
-        setError('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
-      } else {
-        // Outro tipo de erro
-        setError('Ocorreu um erro inesperado ao tentar registrar.');
+  
+  useEffect(() => {
+    const loadUserFromToken = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          const response = await api.get('/auth/me'); 
+          setUser(response.data);
+        } catch (err) {
+          
+          localStorage.removeItem('token');
+          delete api.defaults.headers.common['Authorization'];
+          console.error("Token inválido, fazendo logout.");
+        }
       }
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(false); 
+    };
 
-  // Função de Login
+    loadUserFromToken();
+  }, []); 
+
   const login = async (email, password) => {
     setLoading(true);
     setError(null);
     try {
       const response = await api.post('/auth/login', { email, password });
-      const newToken = response.data.token;
-      setToken(newToken);
-      localStorage.setItem('token', newToken);
+      const { token, user } = response.data; 
+
+      
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      setUser(user);
     } catch (err) {
-      // ▼▼▼ TRATAMENTO DE ERRO MELHORADO ▼▼▼
       if (err.response) {
-        // O servidor respondeu com um erro (ex: credenciais inválidas)
-        setError(err.response.data.msg || 'Erro ao fazer login.');
-      } else if (err.request) {
-        // A requisição foi feita, mas não houve resposta (servidor offline)
-        setError('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
+        setError(err.response.data.msg || 'Credenciais inválidas.');
       } else {
-        // Outro tipo de erro
-        setError('Ocorreu um erro inesperado ao tentar fazer login.');
+        setError('Não foi possível conectar ao servidor.');
       }
+      
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const register = async (name, email, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.post('/auth/register', { name, email, password });
+      const { token, user } = response.data;
+
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+      setUser(user);
+    } catch (err) {
+      if (err.response) {
+        setError(err.response.data.msg || 'Erro ao registrar.');
+      } else {
+        setError('Não foi possível conectar ao servidor.');
+      }
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Função de Logout
   const logout = () => {
-    setToken(null);
+    
     setUser(null);
     localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
   };
 
-  // O valor que será compartilhado com todos os componentes filhos
   const value = {
-    token,
     user,
     loading,
     error,
-    register,
+    isAuthenticated: !!user, 
     login,
+    register,
     logout,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
