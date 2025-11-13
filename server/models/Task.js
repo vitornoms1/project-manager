@@ -1,5 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
+// Removidas as linhas: const Project = require('./Project');
+// Removidas as linhas: const User = require('./User');
 
 const Task = sequelize.define('Task', {
   id: {
@@ -30,24 +32,24 @@ const Task = sequelize.define('Task', {
     type: DataTypes.DATE,
     allowNull: true,
   },
-  
-  projectId: {
+  projectId: { // A definição da coluna com 'references' é mantida
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'Projects',
+      model: 'Projects', // Nome da tabela
       key: 'id',
     }
   },
-  
-  assignedToId: {
+  assignedToId: { // A definição da coluna com 'references' é mantida
     type: DataTypes.INTEGER,
-    allowNull: true, 
+    allowNull: true,
     references: {
-      model: 'Users',
+      model: 'Users', // Nome da tabela
       key: 'id',
     }
   }
 });
+
+// Removido o bloco de associações Task.belongsTo(...)
 
 module.exports = Task;

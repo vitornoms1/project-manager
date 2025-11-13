@@ -3,7 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import TaskCard from './TaskCard';
 import TaskCardSkeleton from './TaskCardSkeleton';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion'; // 1. Importar AnimatePresence
 
 const KanbanColumn = ({ id, title, tasks, onTaskClick, isLoading }) => {
   const { setNodeRef } = useDroppable({
@@ -13,6 +13,7 @@ const KanbanColumn = ({ id, title, tasks, onTaskClick, isLoading }) => {
     },
   });
 
+  // As variantes da lista e dos itens continuam aqui
   const listVariants = {
     visible: {
       transition: {
@@ -31,11 +32,12 @@ const KanbanColumn = ({ id, title, tasks, onTaskClick, isLoading }) => {
     <div ref={setNodeRef} className="bg-gray-200 p-4 rounded-lg flex flex-col min-h-[200px]">
       <h2 className="font-bold text-lg mb-4 text-gray-700">{title}</h2>
       
+      {/* 2. O container da lista ainda usa 'motion' */}
       <motion.div 
         className="space-y-4 flex-grow"
+        variants={listVariants}
         initial="hidden"
         animate="visible"
-        variants={listVariants}
       >
         {isLoading ? (
           <>
@@ -45,11 +47,18 @@ const KanbanColumn = ({ id, title, tasks, onTaskClick, isLoading }) => {
           </>
         ) : tasks.length > 0 ? (
           <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-            {tasks.map(task => (
-              <motion.div key={task.id} variants={itemVariants}>
-                <TaskCard task={task} onTaskClick={onTaskClick} />
-              </motion.div>
-            ))}
+            {/* 3. Adicionar AnimatePresence para animar a entrada/saída */}
+            <AnimatePresence>
+              {tasks.map(task => (
+                // 4. O <motion.div> foi REMOVIDO daqui
+                <TaskCard 
+                  key={task.id} 
+                  task={task} 
+                  onTaskClick={onTaskClick}
+                  variants={itemVariants} // 5. Passa as variantes para o TaskCard
+                />
+              ))}
+            </AnimatePresence>
           </SortableContext>
         ) : (
           <div className="flex justify-center items-center h-full min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg">

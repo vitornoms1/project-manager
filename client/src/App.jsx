@@ -9,8 +9,14 @@ import RegisterPage from './pages/RegisterPage';
 import ProjectPage from './pages/ProjectPage';
 
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  // Ajustado para usar authLoading
+  const { isAuthenticated, authLoading } = useAuth(); 
   
+  if (authLoading) {
+    // Pode mostrar um spinner/loading aqui se quiser
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>; 
+  }
+
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
@@ -19,45 +25,44 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
+  // Nota: O AuthProvider está corretamente em main.jsx, não duplicado aqui.
   return (
-    <AuthProvider>
-      <Router>
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 5000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-          }}
+    <Router>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 5000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+        }}
+      />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          } 
         />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+        <Route 
+          path="/projects/:id" 
+          element={
+            <ProtectedRoute>
+              <ProjectPage />
+            </ProtectedRoute>
+          } 
+        />
 
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/projects/:id" 
-            element={
-              <ProtectedRoute>
-                <ProjectPage />
-              </ProtectedRoute>
-            } 
-          />
-
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </Router>
   );
 }
 

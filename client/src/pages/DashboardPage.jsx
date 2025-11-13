@@ -14,7 +14,6 @@ const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  
   const [editingProject, setEditingProject] = useState(null);
 
   useEffect(() => {
@@ -51,7 +50,6 @@ const DashboardPage = () => {
     }
   };
 
-  
   const handleUpdateProject = async (projectId, updatedData) => {
     try {
       const response = await api.put(`/projects/${projectId}`, updatedData);
@@ -81,7 +79,6 @@ const DashboardPage = () => {
     }
   };
 
-  
   const openCreateModal = () => {
     setEditingProject(null); 
     setIsModalOpen(true);
@@ -176,37 +173,72 @@ const DashboardPage = () => {
               animate="visible"
             >
               <AnimatePresence>
-                {projects.map(project => (
-                  <motion.div 
-                    key={project.id} 
-                    variants={itemVariants}
-                    layout
-                    exit="exit"
-                    className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col"
-                  >
-                    <Link to={`/projects/${project.id}`} className="block p-6 flex-grow">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-2">{project.title}</h3>
-                      <p className="text-gray-600 line-clamp-2">{project.description}</p>
-                    </Link>
-                    <div className="border-t border-gray-200 px-6 py-3 flex justify-end gap-2">
-                      <button 
-                        onClick={() => openEditModal(project)} 
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteProject(project.id);
-                        }}
-                        className="text-sm font-medium text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
+                {projects.map(project => {
+                  
+                  // --- Lógica da Data de Entrega ---
+                  let formattedDate = null;
+                  let isOverdue = false;
+                  if (project.dueDate) {
+                    const dueDate = new Date(project.dueDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    dueDate.setUTCHours(0, 0, 0, 0); 
+                    if (dueDate < today) {
+                      isOverdue = true;
+                    }
+                    formattedDate = dueDate.toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      timeZone: 'UTC',
+                    });
+                  }
+                  // --- Fim da Lógica ---
+
+                  return (
+                    <motion.div 
+                      key={project.id} 
+                      variants={itemVariants}
+                      layout
+                      exit="exit"
+                      className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col"
+                    >
+                      <Link to={`/projects/${project.id}`} className="block p-6 flex-grow">
+                        <h3 className="text-xl font-semibold text-gray-800 mb-2">{project.title}</h3>
+                        <p className="text-gray-600 line-clamp-2">{project.description}</p>
+                        
+                        {formattedDate && (
+                          <div className={`mt-3 pt-3 border-t border-gray-100 text-sm font-medium flex items-center ${
+                            isOverdue ? 'text-red-600' : 'text-gray-500'
+                          }`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 mr-1.5">
+                              <path fillRule="evenodd" d="M5.75 3a.75.75 0 0 1 .75.75V4h7V3.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V3.75A.75.75 0 0 1 5.75 3ZM3.5 6.75A1.25 1.25 0 0 1 4.75 5.5h10.5A1.25 1.25 0 0 1 16.5 6.75v8.5A1.25 1.25 0 0 1 15.25 16.5H4.75A1.25 1.25 0 0 1 3.5 15.25v-8.5Z" clipRule="evenodd" />
+                            </svg>
+                            <span>Due: {formattedDate}</span>
+                          </div>
+                        )}
+                      </Link>
+                      
+                      <div className="border-t border-gray-200 px-6 py-3 flex justify-end gap-2">
+                        <button 
+                          onClick={() => openEditModal(project)} 
+                          className="text-sm font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProject(project.id);
+                          }}
+                          className="text-sm font-medium text-red-600 hover:text-red-800 px-2 py-1 rounded hover:bg-red-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
             </motion.div>
           </>

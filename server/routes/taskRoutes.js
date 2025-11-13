@@ -1,17 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const { Task, Project } = require('../models');
+// O 'require('../models')' puxa todos os modelos (incluindo Project e Task) do 'models/index.js'
+const { Task, Project } = require('../models'); 
 const sequelize = require('../config/database'); 
 
-
-
-
+// Rota POST / (Criar Tarefa) - ATUALIZADA
 router.post('/', auth, async (req, res) => {
-  const { title, description, priority, projectId } = req.body;
+  // 1. Adicionado 'dueDate' (e outros campos do modelo) ao destructuring
+  const { title, description, priority, projectId, dueDate, status, assignedToId } = req.body;
 
   try {
-    
     const project = await Project.findOne({ where: { id: projectId, ownerId: req.user.id } });
     if (!project) {
       return res.status(404).json({ msg: 'Project not found or you are not the owner.' });
@@ -20,8 +19,11 @@ router.post('/', auth, async (req, res) => {
     const newTask = await Task.create({
       title,
       description,
-      priority,
+      priority: priority || 'Medium', // Garante valor padrão
+      status: status || 'To Do',       // Garante valor padrão
       projectId,
+      dueDate: dueDate || null, // 2. Salva dueDate (ou null se não for enviado)
+      assignedToId: assignedToId || null // Salva null se não for enviado
     });
     res.status(201).json(newTask);
   } catch (err) {
@@ -30,12 +32,9 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-
-
-
+// Rota GET /project/:projectId (Listar Tarefas) - Sem alterações
 router.get('/project/:projectId', auth, async (req, res) => {
   try {
-    
     const project = await Project.findOne({ where: { id: req.params.projectId, ownerId: req.user.id } });
     if (!project) {
       return res.status(404).json({ msg: 'Project not found or you are not the owner.' });
@@ -43,9 +42,7 @@ router.get('/project/:projectId', auth, async (req, res) => {
     
     const tasks = await Task.findAll({
       where: { projectId: req.params.projectId },
-      
       order: [
-        
         sequelize.literal(`
           CASE
             WHEN priority = 'High' THEN 1
@@ -54,7 +51,6 @@ router.get('/project/:projectId', auth, async (req, res) => {
             ELSE 4
           END
         `),
-        
         ['createdAt', 'ASC']
       ]
     });
@@ -65,11 +61,38 @@ router.get('/project/:projectId', auth, async (req, res) => {
   }
 });
 
+// Rota PATCH /:id/status (Atualizar Status) - Sem alterações
+router.patch('/:id/status', auth, async (req, res) => {
+  const { status } = req.body;
+  const { id } = req.params;
 
+  try {
+    const task = await Task.findByPk(id, {
+      include: { model: Project, attributes: ['ownerId'] }
+    });
 
+    if (!task) {
+      return res.status(404).json({ msg: 'Task not found.' });
+    }
 
+    if (task.Project.ownerId !== req.user.id) {
+      return res.status(401).json({ msg: 'User not authorized.' });
+    }
+
+    task.status = status;
+    await task.save();
+
+    res.json(task);
+  } catch (err) {
+    console.error('Error updating task status:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Rota PUT /:id (Atualizar Tarefa Completa) - ATUALIZADA
 router.put('/:id', auth, async (req, res) => {
-  const { title, description, status, priority, assignedToId } = req.body;
+  // 1. Adicionado 'dueDate' ao destructuring
+  const { title, description, status, priority, assignedToId, dueDate } = req.body;
 
   try {
     const task = await Task.findByPk(req.params.id, {
@@ -79,14 +102,20 @@ router.put('/:id', auth, async (req, res) => {
     if (!task) {
       return res.status(404).json({ msg: 'Task not found.' });
     }
-
     
     if (task.Project.ownerId !== req.user.id) {
       return res.status(401).json({ msg: 'User not authorized.' });
     }
-
     
-    await task.update({ title, description, status, priority, assignedToId });
+    // 2. Adicionado 'dueDate' ao objeto de atualização
+    await task.update({ 
+      title, 
+      description, 
+      status, 
+      priority, 
+      assignedToId, 
+      dueDate: dueDate || null // Salva a data ou null se for removida
+    });
 
     res.json(task);
   } catch (err) {
@@ -95,9 +124,7 @@ router.put('/:id', auth, async (req, res) => {
   }
 });
 
-
-
-
+// Rota DELETE /:id (Deletar Tarefa) - Sem alterações
 router.delete('/:id', auth, async (req, res) => {
   try {
     const task = await Task.findByPk(req.params.id, {
@@ -107,7 +134,6 @@ router.delete('/:id', auth, async (req, res) => {
     if (!task) {
       return res.status(404).json({ msg: 'Task not found.' });
     }
-
     
     if (task.Project.ownerId !== req.user.id) {
       return res.status(401).json({ msg: 'User not authorized.' });

@@ -5,7 +5,7 @@ const NewTaskModal = ({ isOpen, onClose, projectId, onTaskAdded }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState('Medium');
-  
+  const [dueDate, setDueDate] = useState(''); // 1. Novo estado para a data de entrega
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -22,15 +22,20 @@ const NewTaskModal = ({ isOpen, onClose, projectId, onTaskAdded }) => {
     setError(null);
 
     try {
+      // 2. Passa o dueDate (ou null se estiver vazio) para a função
+      await onTaskAdded({ 
+        title, 
+        description, 
+        priority, 
+        dueDate: dueDate || null 
+      });
       
-      await onTaskAdded({ title, description, priority });
-      
-      
+      // 3. Limpa o novo campo de data após o sucesso
       setTitle('');
       setDescription('');
       setPriority('Medium');
+      setDueDate(''); // Limpa o estado da data
     } catch (err) {
-      
       const errorMsg = err.response?.data?.msg || "Failed to create task. Please try again.";
       setError(errorMsg);
     } finally {
@@ -38,11 +43,11 @@ const NewTaskModal = ({ isOpen, onClose, projectId, onTaskAdded }) => {
     }
   };
 
-  
   const handleClose = () => {
     setTitle('');
     setDescription('');
     setPriority('Medium');
+    setDueDate(''); // 4. Limpa o estado da data ao fechar
     setError(null);
     onClose();
   };
@@ -74,20 +79,33 @@ const NewTaskModal = ({ isOpen, onClose, projectId, onTaskAdded }) => {
               placeholder="Add more details about the task."
             ></textarea>
           </div>
-          <div className="mb-6">
-            <label htmlFor="priority" className="block text-gray-700 mb-2">Priority</label>
-            <select
-              id="priority"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-            </select>
-          </div>
 
+          {/* 5. Novo campo de Data de Entrega (dueDate) adicionado */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label htmlFor="priority" className="block text-gray-700 mb-2">Priority</label>
+              <select
+                id="priority"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="dueDate" className="block text-gray-700 mb-2">Due Date (Optional)</label>
+              <input
+                type="date"
+                id="dueDate"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
           
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}
           

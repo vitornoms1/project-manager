@@ -1,26 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import InputField from './InputField';
 
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  try {
+    return new Date(dateString).toISOString().split('T')[0];
+  } catch (e) {
+    console.error("Erro ao formatar data:", e);
+    return '';
+  }
+};
 
 const NewProjectModal = ({ isOpen, onClose, onProjectAdded, onProjectUpdated, projectToEdit }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  
   const isEditing = !!projectToEdit;
 
-  
   useEffect(() => {
     if (isOpen) {
       if (isEditing) {
+        // Preenche o formulário com dados do projeto para editar
         setTitle(projectToEdit.title);
         setDescription(projectToEdit.description || '');
+        setDueDate(formatDateForInput(projectToEdit.dueDate));
       } else {
-        
+        // Limpa o formulário para criar um novo
         setTitle('');
         setDescription('');
+        setDueDate('');
       }
       setError(null); 
     }
@@ -36,12 +47,23 @@ const NewProjectModal = ({ isOpen, onClose, onProjectAdded, onProjectUpdated, pr
     setIsSubmitting(true);
     setError(null);
     
+    const projectData = {
+      title,
+      description,
+      dueDate: dueDate || null // Envia null se o campo estiver vazio
+    };
+    
     try {
       if (isEditing) {
-        await onProjectUpdated(projectToEdit.id, { title, description });
+        await onProjectUpdated(projectToEdit.id, projectData);
       } else {
-        await onProjectAdded({ title, description });
+        await onProjectAdded(projectData);
+        // Limpa o formulário localmente apenas na criação
+        setTitle(''); 
+        setDescription('');
+        setDueDate('');
       }
+      // O DashboardPage é responsável por fechar o modal em caso de sucesso
     } catch (err) {
       const errorMsg = err.response?.data?.msg || `Failed to ${isEditing ? 'update' : 'create'} project.`;
       setError(errorMsg);
@@ -78,6 +100,17 @@ const NewProjectModal = ({ isOpen, onClose, onProjectAdded, onProjectUpdated, pr
               rows="4"
               placeholder="Provide a brief description of the project."
             ></textarea>
+          </div>
+
+          <div className="mb-6">
+            <label htmlFor="projectDueDate" className="block text-gray-700 mb-2">Due Date (Optional)</label>
+            <input
+              type="date"
+              id="projectDueDate"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
 
           {error && <p className="text-red-500 text-center mb-4">{error}</p>}

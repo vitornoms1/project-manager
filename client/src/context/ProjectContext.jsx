@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext } from 'react';
-import axios from 'axios';
-import { useAuth } from './AuthContext'; 
+// Removido import do axios aqui
+import api from '../api/axios'; // 1. Importar a instância global configurada
+// Removido useAuth daqui, não precisamos mais pegar o token manualmente
+// import { useAuth } from './AuthContext'; 
 
 const ProjectContext = createContext();
 
@@ -8,31 +10,26 @@ export function useProjects() {
   return useContext(ProjectContext);
 }
 
-
-const createApi = (token) => {
-  return axios.create({
-    baseURL: '/api', 
-    headers: {
-      'x-auth-token': token 
-    }
-  });
-};
+// 2. Removida a função createApi
 
 export function ProjectProvider({ children }) {
   const [projects, setProjects] = useState([]);
-  const [tasks, setTasks] = useState([]);
+  // Removido estado de tasks daqui, ele pertence à ProjectPage
+  // const [tasks, setTasks] = useState([]); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { token } = useAuth(); 
+  // Removida a dependência do token, o 'api' global já o terá
+  // const { token } = useAuth(); 
   
-  const api = createApi(token);
+  // 'api' agora se refere à instância global importada
 
   const fetchProjects = async () => {
-    if (!token) return;
+    // Removida a checagem do token
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/projects');
+      // Usa a instância 'api' diretamente
+      const response = await api.get('/projects'); 
       setProjects(response.data);
     } catch (err) {
       setError("Failed to fetch projects.");
@@ -43,51 +40,27 @@ export function ProjectProvider({ children }) {
   };
 
   const createProject = async (title, description) => {
-    if (!token) return;
+    // Removida a checagem do token
     setLoading(true);
     setError(null);
     try {
+      // Usa a instância 'api' diretamente
       const response = await api.post('/projects', { title, description });
       const newProject = response.data;
-      
-      setProjects(prevProjects => [newProject, ...prevProjects]);
+      setProjects(prevProjects => [newProject, ...prevProjects]); // Adiciona no início
+      return newProject; // Retorna o projeto criado para o chamador (modal)
     } catch (err) {
       setError("Failed to create project.");
       console.error(err);
+      throw err; // Lança o erro para o modal tratar
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchTasksByProjectId = async (projectId) => {
-    if (!token) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await api.get(`/tasks/project/${projectId}`);
-      setTasks(response.data);
-    } catch (err) {
-      setError("Failed to fetch tasks.");
-      console.error(err);
-      setTasks([]); 
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createTask = async (taskData) => {
-    if (!token) return;
-    
-    try {
-      const response = await api.post('/tasks', taskData);
-      const newTask = response.data;
-      
-      setTasks(prevTasks => [...prevTasks, newTask]);
-    } catch (err) {
-      setError("Failed to create task.");
-      console.error(err);
-    }
-  };
+  // Removidas as funções relacionadas a Tasks, elas pertencem à ProjectPage
+  // const fetchTasksByProjectId = async (projectId) => { ... };
+  // const createTask = async (taskData) => { ... };
 
   const value = {
     projects,
@@ -95,6 +68,8 @@ export function ProjectProvider({ children }) {
     error,
     fetchProjects,
     createProject,
+    // Adiciona setProjects para atualizações otimistas ou deleções feitas fora do contexto
+    setProjects 
   };
 
   return (

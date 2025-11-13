@@ -20,10 +20,16 @@ const Project = sequelize.define('Project', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'Users',
+      model: 'Users', // Nome da tabela no banco
       key: 'id',
     }
+  },
+  // ===== CAMPO ADICIONADO AQUI =====
+  dueDate: {
+    type: DataTypes.DATE,
+    allowNull: true, // Data de entrega é opcional para projetos
   }
+  // ================================
 });
 
 module.exports = Project;

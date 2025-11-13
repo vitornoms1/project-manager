@@ -6,7 +6,7 @@ import { DndContext, DragOverlay, closestCorners, useSensor, useSensors, Pointer
 import KanbanColumn from '../components/KanbanColumn';
 import TaskCard from '../components/TaskCard';
 import api from '../api/axios';
-import toast from 'react-hot-toast'; 
+import toast from 'react-hot-toast';
 
 const ProjectPage = () => {
   const { id: projectId } = useParams();
@@ -33,12 +33,19 @@ const ProjectPage = () => {
       setError(null);
       try {
         const response = await api.get(`/projects/${projectId}`);
+        
+        // Log para depuração (pode ser removido depois)
+        console.log("API Response Data:", response.data); 
+        
         setProjectTitle(response.data.title);
-        setTasks(response.data.tasks || []);
+        
+        setTasks(response.data.Tasks || []); 
+        // ================================
+
       } catch (err) {
         const errorMsg = "Could not load project data.";
         setError(errorMsg);
-        toast.error(errorMsg); 
+        toast.error(errorMsg);
       } finally {
         setIsLoading(false);
       }
@@ -67,11 +74,11 @@ const ProjectPage = () => {
   const handleUpdateTaskStatus = async (taskId, newStatus, originalTasks) => {
     try {
       await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
-      toast.success('Task status updated!'); 
+      toast.success('Task status updated!');
     } catch (err) {
       console.error("Failed to update task status:", err);
       setTasks(originalTasks);
-      toast.error('Could not move task. Changes reverted.'); 
+      toast.error('Could not move task. Changes reverted.');
     }
   };
 
@@ -107,11 +114,9 @@ const ProjectPage = () => {
       const newTask = response.data;
       setTasks(prevTasks => [...prevTasks, newTask]);
       setIsNewTaskModalOpen(false);
-      toast.success('Task created successfully!'); 
+      toast.success('Task created successfully!');
     } catch (err) {
       console.error("Error creating task:", err);
-      
-      
       throw err;
     }
   };
@@ -124,7 +129,7 @@ const ProjectPage = () => {
         prevTasks.map(task => (task.id === taskId ? updatedTask : task))
       );
       setSelectedTask(null);
-      toast.success('Task updated successfully!'); 
+      toast.success('Task updated successfully!');
     } catch (err) {
       console.error("Error updating task:", err);
       throw err;
@@ -136,7 +141,7 @@ const ProjectPage = () => {
       await api.delete(`/tasks/${taskId}`);
       setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
       setSelectedTask(null);
-      toast.success('Task deleted successfully!'); 
+      toast.success('Task deleted successfully!');
     } catch (err) {
       console.error("Error deleting task:", err);
       throw err;
@@ -173,7 +178,7 @@ const ProjectPage = () => {
         </header>
 
         <main className="p-6">
-          {error && !isLoading ? ( 
+          {error && !isLoading ? (
             <div className="text-center mt-16 text-red-500">
               <h2 className="text-2xl font-semibold mb-4">An Error Occurred</h2>
               <p>{error}</p>
